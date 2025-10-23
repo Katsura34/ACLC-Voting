@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ElectionController;
+use App\Http\Controllers\PositionController;
+use App\Http\Controllers\PartyController;
+use App\Http\Controllers\CandidateController;
 use Illuminate\Support\Facades\Route;
 
 // Home redirect based on role or to login if guest
@@ -44,14 +47,28 @@ Route::prefix('admin')
         Route::put('/elections/{election}', [ElectionController::class, 'update'])->name('elections.update');
         Route::delete('/elections/{election}', [ElectionController::class, 'destroy'])->name('elections.destroy');
 
-        // Actions
+        // Election actions
         Route::post('/elections/{election}/toggle', [ElectionController::class, 'toggle'])->name('elections.toggle');
         Route::post('/elections/{election}/publish', [ElectionController::class, 'publishResults'])->name('elections.publish');
         Route::post('/elections/{election}/reset', [ElectionController::class, 'resetVotes'])->name('elections.reset');
 
-        // Parties
+        // Positions (nested under election)
+        Route::post('/elections/{election}/positions', [PositionController::class, 'store'])->name('positions.store');
+        Route::put('/elections/{election}/positions/{position}', [PositionController::class, 'update'])->name('positions.update');
+        Route::delete('/elections/{election}/positions/{position}', [PositionController::class, 'destroy'])->name('positions.destroy');
+
+        // Parties (nested under election)
+        Route::post('/elections/{election}/parties', [PartyController::class, 'store'])->name('parties.store');
+        Route::put('/elections/{election}/parties/{party}', [PartyController::class, 'update'])->name('parties.update');
+        Route::delete('/elections/{election}/parties/{party}', [PartyController::class, 'destroy'])->name('parties.destroy');
+
+        // Candidates (nested under election)
+        Route::post('/elections/{election}/candidates', [CandidateController::class, 'store'])->name('candidates.store');
+        Route::put('/elections/{election}/candidates/{candidate}', [CandidateController::class, 'update'])->name('candidates.update');
+        Route::delete('/elections/{election}/candidates/{candidate}', [CandidateController::class, 'destroy'])->name('candidates.destroy');
+
+        // Legacy pages
         Route::get('/parties', fn () => view('admin.parties.index'))->name('parties.index');
-        // Candidates
         Route::get('/candidates', fn () => view('admin.candidates.index'))->name('candidates.index');
     });
 
