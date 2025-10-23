@@ -8,7 +8,6 @@ use App\Http\Controllers\CandidateController;
 use App\Http\Controllers\VoteController;
 use Illuminate\Support\Facades\Route;
 
-// Home redirect based on role or to login if guest
 Route::get('/', function () {
     if (auth()->check()) {
         return auth()->user()->isAdmin()
@@ -18,7 +17,6 @@ Route::get('/', function () {
     return redirect()->route('login');
 })->name('home');
 
-// Auth routes
 Route::controller(AuthController::class)->group(function () {
     Route::get('/login', 'showLogin')->name('login')->middleware('guest');
     Route::post('/login', 'login')->name('login.post');
@@ -27,7 +25,6 @@ Route::controller(AuthController::class)->group(function () {
     Route::post('/register', 'register')->name('register.post')->middleware('guest');
 });
 
-// Admin routes (protected)
 Route::prefix('admin')
     ->middleware(['web','auth','admin'])
     ->as('admin.')
@@ -61,12 +58,16 @@ Route::prefix('admin')
         Route::put('/elections/{election}/candidates/{candidate}', [CandidateController::class, 'update'])->name('candidates.update');
         Route::delete('/elections/{election}/candidates/{candidate}', [CandidateController::class, 'destroy'])->name('candidates.destroy');
 
-        // Legacy pages
+        // Non-nested convenience endpoints for forms that don't know the election at render time
+        Route::post('/parties/store', [PartyController::class, 'storeAny'])->name('parties.storeAny');
+        Route::post('/candidates/store', [CandidateController::class, 'storeAny'])->name('candidates.storeAny');
+
+        // Pages
         Route::get('/parties', fn () => view('admin.parties.index'))->name('parties.index');
+        Route::get('/parties/create', fn () => view('admin.parties.create'))->name('parties.create');
         Route::get('/candidates', fn () => view('admin.candidates.index'))->name('candidates.index');
     });
 
-// Student routes (protected)
 Route::prefix('student')
     ->middleware(['web','auth','student'])
     ->as('student.')
