@@ -3,7 +3,6 @@
 @section('title', 'Student Dashboard')
 
 @section('content')
-<!-- Page Header -->
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h1 class="h3 mb-0">
@@ -18,7 +17,10 @@
     </div>
 </div>
 
-<!-- Voting Status Alert -->
+@php
+    $activeElection = \App\Models\Election::where('is_active', true)->first();
+@endphp
+
 <div class="row mb-4">
     <div class="col-12">
         @if(auth()->user()->has_voted)
@@ -38,9 +40,15 @@
                     <div>
                         <h5 class="alert-heading mb-1">You Haven't Voted Yet</h5>
                         <p class="mb-2">Don't miss your chance to make your voice heard in the election.</p>
-                        <a href="{{ route('student.vote') }}" class="btn btn-warning">
-                            <i class="fas fa-vote-yea me-2"></i>Cast Your Vote Now
-                        </a>
+                        @if($activeElection)
+                            <a href="{{ route('student.vote') }}" class="btn btn-warning">
+                                <i class="fas fa-vote-yea me-2"></i>Cast Your Vote Now
+                            </a>
+                        @else
+                            <button class="btn btn-outline-secondary" disabled>
+                                <i class="fas fa-ban me-2"></i>No Active Election
+                            </button>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -48,7 +56,6 @@
     </div>
 </div>
 
-<!-- Current Election Info -->
 <div class="row mb-4">
     <div class="col-md-12">
         <div class="card border-0 shadow-sm">
@@ -58,62 +65,83 @@
                 </h5>
             </div>
             <div class="card-body">
-                <!-- No Active Election -->
-                <div class="text-center py-4">
-                    <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
-                    <h5 class="text-muted">No Active Election</h5>
-                    <p class="text-muted mb-0">There are currently no active elections. Please check back later.</p>
-                </div>
-                
-                <!-- Active Election (Hidden until election is active) -->
-                <div class="d-none" id="active-election">
+                @if(!$activeElection)
+                    <div class="text-center py-4">
+                        <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Active Election</h5>
+                        <p class="text-muted mb-0">There are currently no active elections. Please check back later.</p>
+                    </div>
+                @else
                     <div class="row">
                         <div class="col-md-6">
-                            <h6 class="fw-bold text-primary">Student Council Election 2025</h6>
-                            <p class="text-muted mb-2">Vote for your preferred candidates for student council positions.</p>
+                            <h6 class="fw-bold text-primary">{{ $activeElection->title }}</h6>
+                            <p class="text-muted mb-2">{{ $activeElection->description }}</p>
                             <div class="mb-2">
                                 <small class="text-muted">
-                                    <i class="fas fa-calendar me-1"></i>Voting Period: March 1-3, 2025
+                                    <i class="fas fa-calendar me-1"></i>
+                                    @if($activeElection->start_date) Starts {{ $activeElection->start_date->format('M d, Y H:i') }} • @endif
+                                    @if($activeElection->end_date) Ends {{ $activeElection->end_date->format('M d, Y H:i') }} @endif
                                 </small>
                             </div>
                             <div class="mb-2">
                                 <small class="text-muted">
-                                    <i class="fas fa-users me-1"></i>Total Registered Voters: 1,250
+                                    <i class="fas fa-users me-1"></i>Total Registered Voters: {{ $activeElection->total_registered_voters ?? 0 }}
                                 </small>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="text-end">
                                 <div class="mb-2">
-                                    <span class="badge bg-success fs-6">ACTIVE</span>
+                                    @if($activeElection->is_active)
+                                        <span class="badge bg-success fs-6">ACTIVE</span>
+                                    @else
+                                        <span class="badge bg-secondary fs-6">{{ strtoupper($activeElection->status) }}</span>
+                                    @endif
                                 </div>
                                 <div class="progress mb-2" style="height: 20px;">
-                                    <div class="progress-bar" role="progressbar" style="width: 35%" aria-valuenow="35" aria-valuemin="0" aria-valuemax="100">
-                                        35% Voted
+                                    <div class="progress-bar" role="progressbar"
+                                         style="width: {{ $activeElection->voting_percentage ?? 0 }}%"
+                                         aria-valuenow="{{ $activeElection->voting_percentage ?? 0 }}" aria-valuemin="0" aria-valuemax="100">
+                                        {{ number_format($activeElection->voting_percentage ?? 0, 2) }}% Voted
                                     </div>
                                 </div>
-                                <small class="text-muted">438 out of 1,250 students have voted</small>
+                                <small class="text-muted">
+                                    {{ $activeElection->total_votes_cast ?? 0 }} out of {{ $activeElection->total_registered_voters ?? 0 }} students have voted
+                                </small>
                             </div>
                         </div>
                     </div>
-                </div>
+                    @if(!auth()->user()->has_voted)
+                        <div class="mt-3">
+                            <a href="{{ route('student.vote') }}" class="btn btn-primary">
+                                <i class="fas fa-vote-yea me-2"></i>Go to Voting
+                            </a>
+                        </div>
+                    @endif
+                @endif
             </div>
         </div>
     </div>
 </div>
 
-<!-- Quick Actions -->
 <div class="row mb-4">
     <div class="col-md-6">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body text-center py-4">
-                @if(!auth()->user()->has_voted)
+                @if(!auth()->user()->has_voted && $activeElection)
                     <i class="fas fa-vote-yea fa-3x text-primary mb-3"></i>
                     <h5>Cast Your Vote</h5>
                     <p class="text-muted mb-3">Participate in the democratic process by voting for your preferred candidates.</p>
                     <a href="{{ route('student.vote') }}" class="btn btn-primary">
                         <i class="fas fa-vote-yea me-2"></i>Vote Now
                     </a>
+                @elseif(!auth()->user()->has_voted && !$activeElection)
+                    <i class="fas fa-ban fa-3x text-muted mb-3"></i>
+                    <h5>No Active Election</h5>
+                    <p class="text-muted mb-3">Please check back when an election starts.</p>
+                    <button class="btn btn-outline-secondary" disabled>
+                        <i class="fas fa-clock me-2"></i>Waiting
+                    </button>
                 @else
                     <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
                     <h5>Vote Submitted</h5>
@@ -125,22 +153,29 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-md-6">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body text-center py-4">
                 <i class="fas fa-chart-bar fa-3x text-info mb-3"></i>
                 <h5>Election Results</h5>
-                <p class="text-muted mb-3">View the results once they are published by the administration.</p>
-                <button class="btn btn-outline-info" disabled>
-                    <i class="fas fa-clock me-2"></i>Results Pending
-                </button>
+                @php $pub = $activeElection && $activeElection->results_published; @endphp
+                @if($pub)
+                    <p class="text-muted mb-3">Results are published. Check the results page.</p>
+                    <a href="{{ route('student.vote') }}" class="btn btn-info">
+                        <i class="fas fa-chart-line me-2"></i>View Results
+                    </a>
+                @else
+                    <p class="text-muted mb-3">View the results once they are published by the administration.</p>
+                    <button class="btn btn-outline-info" disabled>
+                        <i class="fas fa-clock me-2"></i>Results Pending
+                    </button>
+                @endif
             </div>
         </div>
     </div>
 </div>
 
-<!-- Student Info -->
 <div class="row">
     <div class="col-md-12">
         <div class="card border-0 shadow-sm">
@@ -179,7 +214,7 @@
                             <ul class="small mb-0">
                                 <li>You can only vote once per election</li>
                                 <li>Your vote is anonymous and secure</li>
-                                <li>Vote for one candidate per position</li>
+                                <li>Vote per the allowed choices for each position</li>
                                 <li>Review your choices before submitting</li>
                             </ul>
                         </div>
