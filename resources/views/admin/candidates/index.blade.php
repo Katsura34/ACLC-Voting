@@ -1,179 +1,242 @@
 @extends('layouts.app')
 
-@section('title', 'Candidates Management')
+@section('title', 'Candidates')
 
 @section('content')
-<!-- Page Header -->
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h1 class="h3 mb-0">
-            <i class="fas fa-user-tie text-primary me-2"></i>Candidates Management
-        </h1>
-        <p class="text-muted mb-0">Manage candidates for elections and positions</p>
-    </div>
-    <div>
-        <a href="{{ route('admin.dashboard') }}" class="btn btn-outline-secondary me-2">
-            <i class="fas fa-arrow-left me-1"></i>Back
-        </a>
-        <button class="btn btn-primary">
-            <i class="fas fa-plus me-2"></i>Add Candidate
-        </button>
-    </div>
+  <h1 class="h4 mb-0"><i class="fas fa-user-tie text-primary me-2"></i>Candidates</h1>
+  <div>
+    <a href="{{ route('admin.elections.index') }}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Back</a>
+  </div>
 </div>
 
-<!-- Filters -->
-<div class="card mb-4">
-    <div class="card-body">
-        <div class="row align-items-end">
-            <div class="col-md-4">
-                <label for="election_filter" class="form-label">
-                    <i class="fas fa-vote-yea me-2"></i>Election
-                </label>
-                <select class="form-select" id="election_filter">
-                    <option value="">All Elections</option>
-                    <!-- Elections will be populated here -->
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label for="party_filter" class="form-label">
-                    <i class="fas fa-flag me-2"></i>Party
-                </label>
-                <select class="form-select" id="party_filter">
-                    <option value="">All Parties</option>
-                    <!-- Parties will be populated based on election -->
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label for="position_filter" class="form-label">
-                    <i class="fas fa-award me-2"></i>Position
-                </label>
-                <select class="form-select" id="position_filter">
-                    <option value="">All Positions</option>
-                    <!-- Positions will be populated based on election -->
-                </select>
-            </div>
-            <div class="col-md-2">
-                <button class="btn btn-outline-primary w-100" onclick="filterCandidates()">
-                    <i class="fas fa-filter me-1"></i>Filter
-                </button>
-            </div>
-        </div>
-    </div>
+@php
+  $elections = \App\Models\Election::with('positions')->orderByDesc('created_at')->get();
+  $selectedElection = request('election_id');
+  $selectedPosition = request('position_id');
+  $q = request('q');
+
+  $candidates = \App\Models\Candidate::with(['election','party','position'])
+    ->when($selectedElection, fn($qry) => $qry->where('election_id', $selectedElection))
+    ->when($selectedPosition, fn($qry) => $qry->where('position_id', $selectedPosition))
+    ->when($q, fn($qry) => $qry->where(function($sub){
+      $sub->where('first_name', 'like', '%'.request('q').'%')
+          ->orWhere('last_name', 'like', '%'.request('q').'%');
+    }))
+    ->orderBy('last_name')
+    ->paginate(10)
+    ->withQueryString();
+@endphp
+
+<div class="card border-0 shadow-sm mb-3">
+  <div class="card-body">
+    <form method="GET" class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label">Election</label>
+        <select name="election_id" class="form-select" onchange="this.form.submit()">
+          <option value="">All</option>
+          @foreach($elections as $e)
+            <option value="{{ $e->id }}" {{ (string)$selectedElection === (string)$e->id ? 'selected' : '' }}>{{ $e->title }}</option>
+          @endforeach
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Position</label>
+        <select name="position_id" class="form-select">
+          <option value="">All</option>
+          @if($selectedElection)
+            @php $positions = optional($elections->firstWhere('id', (int)$selectedElection))->positions ?? collect(); @endphp
+            @foreach($positions as $p)
+              <option value="{{ $p->id }}" {{ (string)$selectedPosition === (string)$p->id ? 'selected' : '' }}>{{ $p->name }}</option>
+            @endforeach
+          @endif
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Search</label>
+        <input type="text" name="q" value="{{ $q }}" class="form-control" placeholder="Name">
+      </div>
+      <div class="col-md-3 text-end">
+        <button class="btn btn-outline-secondary"><i class="fas fa-filter me-1"></i>Filter</button>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCandidateModal"><i class="fas fa-plus me-1"></i>Add Candidate</button>
+      </div>
+    </form>
+  </div>
 </div>
 
-<!-- Candidates List -->
-<div class="card">
-    <div class="card-header">
-        <div class="row align-items-center">
-            <div class="col">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-list me-2"></i>All Candidates
-                </h5>
-            </div>
-            <div class="col-auto">
-                <div class="input-group">
-                    <input type="text" class="form-control" placeholder="Search candidates...">
-                    <button class="btn btn-outline-secondary" type="button">
-                        <i class="fas fa-search"></i>
-                    </button>
+<div class="card border-0 shadow-sm">
+  <div class="card-body">
+    @if($candidates->isEmpty())
+      <div class="text-center text-muted py-4">No candidates found.</div>
+    @else
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Name</th>
+              <th>Election</th>
+              <th>Position</th>
+              <th>Party</th>
+              <th>Course/Year</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @foreach($candidates as $c)
+              <tr>
+                <td class="fw-semibold">{{ $c->first_name }} {{ $c->last_name }}</td>
+                <td class="text-muted small">{{ optional($c->election)->title }}</td>
+                <td>{{ optional($c->position)->name }}</td>
+                <td>{{ optional($c->party)->name ?? 'Independent' }}</td>
+                <td class="text-muted small">{{ trim(($c->course ?? '').' '.($c->year_level ?? '')) }}</td>
+                <td class="text-end">
+                  <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editCandidateModal-{{ $c->id }}"><i class="fas fa-edit"></i></button>
+                  <form action="{{ route('admin.candidates.destroy', [$c->election_id, $c->id]) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this candidate?');">
+                    @csrf
+                    @method('DELETE')
+                    <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                  </form>
+                </td>
+              </tr>
+
+              <div class="modal fade" id="editCandidateModal-{{ $c->id }}" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                  <div class="modal-content">
+                    <form method="POST" action="{{ route('admin.candidates.update', [$c->election_id, $c->id]) }}">
+                      @csrf
+                      @method('PUT')
+                      <div class="modal-header">
+                        <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Edit Candidate</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                      </div>
+                      <div class="modal-body">
+                        <div class="row g-3">
+                          <div class="col-md-6">
+                            <label class="form-label">First Name</label>
+                            <input type="text" name="first_name" value="{{ $c->first_name }}" class="form-control" required>
+                          </div>
+                          <div class="col-md-6">
+                            <label class="form-label">Last Name</label>
+                            <input type="text" name="last_name" value="{{ $c->last_name }}" class="form-control" required>
+                          </div>
+                          <div class="col-md-6">
+                            <label class="form-label">Position</label>
+                            <select name="position_id" class="form-select" required>
+                              @php $positions = optional($elections->firstWhere('id', (int)$c->election_id))->positions ?? collect(); @endphp
+                              @foreach($positions as $p)
+                                <option value="{{ $p->id }}" {{ $c->position_id == $p->id ? 'selected' : '' }}>{{ $p->name }}</option>
+                              @endforeach
+                            </select>
+                          </div>
+                          <div class="col-md-6">
+                            <label class="form-label">Party (optional)</label>
+                            <select name="party_id" class="form-select">
+                              <option value="">Independent</option>
+                              @php $partiesForElection = \App\Models\Party::where('election_id', $c->election_id)->orderBy('name')->get(); @endphp
+                              @foreach($partiesForElection as $p)
+                                <option value="{{ $p->id }}" {{ $c->party_id == $p->id ? 'selected' : '' }}>{{ $p->name }}</option>
+                              @endforeach
+                            </select>
+                          </div>
+                          <div class="col-md-6">
+                            <label class="form-label">Course</label>
+                            <input type="text" name="course" value="{{ $c->course }}" class="form-control">
+                          </div>
+                          <div class="col-md-6">
+                            <label class="form-label">Year Level</label>
+                            <input type="text" name="year_level" value="{{ $c->year_level }}" class="form-control">
+                          </div>
+                          <div class="col-12">
+                            <label class="form-label">Bio</label>
+                            <textarea name="bio" class="form-control" rows="3">{{ $c->bio }}</textarea>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                      </div>
+                    </form>
+                  </div>
                 </div>
-            </div>
-        </div>
-    </div>
-    <div class="card-body">
-        <!-- Empty State -->
-        <div class="text-center py-5" id="empty-state">
-            <i class="fas fa-user-tie fa-4x text-muted mb-3"></i>
-            <h5 class="text-muted">No Candidates Found</h5>
-            <p class="text-muted mb-4">Start by adding candidates to your elections</p>
-            <button class="btn btn-primary">
-                <i class="fas fa-plus me-2"></i>Add First Candidate
-            </button>
-        </div>
-        
-        <!-- Candidates Table (Hidden until data exists) -->
-        <div class="table-responsive d-none" id="candidates-table">
-            <table class="table table-hover">
-                <thead class="table-light">
-                    <tr>
-                        <th>Photo</th>
-                        <th>Candidate Name</th>
-                        <th>Election</th>
-                        <th>Position</th>
-                        <th>Party</th>
-                        <th>Course</th>
-                        <th>Year</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Sample Row Template -->
-                    <tr>
-                        <td>
-                            <img src="https://via.placeholder.com/40x40" class="rounded-circle" alt="Candidate Photo">
-                        </td>
-                        <td>
-                            <div>
-                                <strong>John Doe</strong>
-                                <br>
-                                <small class="text-muted">USN: 2021-001234</small>
-                            </div>
-                        </td>
-                        <td><span class="badge bg-primary">Student Election 2025</span></td>
-                        <td><span class="badge bg-success">President</span></td>
-                        <td><span class="badge bg-warning">Unity Party</span></td>
-                        <td>Computer Science</td>
-                        <td>4th Year</td>
-                        <td>
-                            <div class="dropdown">
-                                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="dropdown">
-                                    <i class="fas fa-ellipsis-v"></i>
-                                </button>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="#"><i class="fas fa-eye me-2"></i>View</a></li>
-                                    <li><a class="dropdown-item" href="#"><i class="fas fa-edit me-2"></i>Edit</a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash me-2"></i>Delete</a></li>
-                                </ul>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        
-        <!-- Pagination -->
-        <nav aria-label="Candidates pagination" class="d-none">
-            <ul class="pagination justify-content-center">
-                <li class="page-item disabled">
-                    <a class="page-link" href="#" tabindex="-1">Previous</a>
-                </li>
-                <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                <li class="page-item"><a class="page-link" href="#">2</a></li>
-                <li class="page-item"><a class="page-link" href="#">3</a></li>
-                <li class="page-item">
-                    <a class="page-link" href="#">Next</a>
-                </li>
-            </ul>
-        </nav>
-    </div>
+              </div>
+            @endforeach
+          </tbody>
+        </table>
+      </div>
+      <div>
+        {{ $candidates->links() }}
+      </div>
+    @endif
+  </div>
 </div>
 
-<script>
-function filterCandidates() {
-    const election = document.getElementById('election_filter').value;
-    const party = document.getElementById('party_filter').value;
-    const position = document.getElementById('position_filter').value;
-    
-    console.log('Filtering candidates:', { election, party, position });
-    // Implementation will filter candidates based on selected criteria
-}
-
-// Update party and position dropdowns based on selected election
-document.getElementById('election_filter').addEventListener('change', function() {
-    const electionId = this.value;
-    // Load parties and positions for selected election
-    console.log('Loading filters for election:', electionId);
-});
-</script>
+<div class="modal fade" id="addCandidateModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="POST" action="{{ route('admin.candidates.store', $selectedElection ? \App\Models\Election::find($selectedElection) : ($elections->first() ?? null)) }}">
+        @csrf
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fas fa-plus me-2"></i>Add Candidate</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Election</label>
+              <select name="election_id" class="form-select" required>
+                @foreach($elections as $e)
+                  <option value="{{ $e->id }}" {{ (string)$selectedElection === (string)$e->id ? 'selected' : '' }}>{{ $e->title }}</option>
+                @endforeach
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Position</label>
+              <select name="position_id" class="form-select" required>
+                @php $positionsDefault = $selectedElection ? optional($elections->firstWhere('id', (int)$selectedElection))->positions : collect(); @endphp
+                @foreach($positionsDefault ?? [] as $p)
+                  <option value="{{ $p->id }}">{{ $p->name }}</option>
+                @endforeach
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Party (optional)</label>
+              <select name="party_id" class="form-select">
+                <option value="">Independent</option>
+                @php $partyDefault = $selectedElection ? \App\Models\Party::where('election_id', $selectedElection)->orderBy('name')->get() : collect(); @endphp
+                @foreach($partyDefault as $p)
+                  <option value="{{ $p->id }}">{{ $p->name }}</option>
+                @endforeach
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">First Name</label>
+              <input type="text" name="first_name" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Last Name</label>
+              <input type="text" name="last_name" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Course</label>
+              <input type="text" name="course" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Year Level</label>
+              <input type="text" name="year_level" class="form-control">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Bio</label>
+              <textarea name="bio" class="form-control" rows="3"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 @endsection
