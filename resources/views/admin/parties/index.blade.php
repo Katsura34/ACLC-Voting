@@ -1,135 +1,169 @@
 @extends('layouts.app')
 
-@section('title', 'Parties Management')
+@section('title', 'Parties')
 
 @section('content')
-<!-- Page Header -->
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h1 class="h3 mb-0">
-            <i class="fas fa-users text-primary me-2"></i>Parties Management
-        </h1>
-        <p class="text-muted mb-0">Manage political parties for elections</p>
-    </div>
-    <div>
-        <a href="{{ route('admin.dashboard') }}" class="btn btn-outline-secondary me-2">
-            <i class="fas fa-arrow-left me-1"></i>Back
-        </a>
-        <button class="btn btn-primary">
-            <i class="fas fa-plus me-2"></i>Add Party
-        </button>
-    </div>
+  <h1 class="h4 mb-0"><i class="fas fa-people-group text-primary me-2"></i>Parties</h1>
+  <div>
+    <a href="{{ route('admin.elections.index') }}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Back</a>
+  </div>
 </div>
 
-<!-- Election Selection -->
-<div class="card mb-4">
-    <div class="card-body">
-        <div class="row align-items-center">
-            <div class="col-md-4">
-                <label for="election_select" class="form-label mb-0">
-                    <i class="fas fa-vote-yea me-2"></i>Select Election
-                </label>
-            </div>
-            <div class="col-md-6">
-                <select class="form-select" id="election_select">
-                    <option value="">Choose an election to manage parties</option>
-                    <!-- Elections will be populated here -->
-                </select>
-            </div>
-            <div class="col-md-2">
-                <button class="btn btn-outline-primary w-100" onclick="loadParties()">
-                    <i class="fas fa-sync me-1"></i>Load
-                </button>
-            </div>
-        </div>
-    </div>
+@php
+  $elections = \App\Models\Election::orderByDesc('created_at')->get();
+  $selectedElection = request('election_id');
+  $q = request('q');
+
+  $parties = \App\Models\Party::with(['election'])
+    ->withCount('candidates')
+    ->when($selectedElection, fn($qry) => $qry->where('election_id', $selectedElection))
+    ->when($q, fn($qry) => $qry->where(function($sub){
+      $sub->where('name', 'like', '%'.request('q').'%')
+          ->orWhere('slug', 'like', '%'.request('q').'%');
+    }))
+    ->orderBy('name')
+    ->paginate(10)
+    ->withQueryString();
+@endphp
+
+<div class="card border-0 shadow-sm mb-3">
+  <div class="card-body">
+    <form method="GET" class="row g-2">
+      <div class="col-md-4">
+        <select name="election_id" class="form-select">
+          <option value="">All Elections</option>
+          @foreach($elections as $e)
+            <option value="{{ $e->id }}" {{ (string)$selectedElection === (string)$e->id ? 'selected' : '' }}>{{ $e->title }}</option>
+          @endforeach
+        </select>
+      </div>
+      <div class="col-md-4">
+        <input type="text" name="q" value="{{ $q }}" class="form-control" placeholder="Search party name or slug">
+      </div>
+      <div class="col-md-4 text-end">
+        <button class="btn btn-outline-secondary"><i class="fas fa-search me-1"></i>Filter</button>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPartyModal"><i class="fas fa-plus me-1"></i>Add Party</button>
+      </div>
+    </form>
+  </div>
 </div>
 
-<!-- Parties List -->
-<div class="card">
-    <div class="card-header">
-        <div class="row align-items-center">
-            <div class="col">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-flag me-2"></i>Political Parties
-                </h5>
-            </div>
-            <div class="col-auto">
-                <div class="input-group">
-                    <input type="text" class="form-control" placeholder="Search parties...">
-                    <button class="btn btn-outline-secondary" type="button">
-                        <i class="fas fa-search"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="card-body">
-        <!-- No Election Selected -->
-        <div class="text-center py-5" id="no-election-state">
-            <i class="fas fa-arrow-up fa-3x text-muted mb-3"></i>
-            <h5 class="text-muted">Select an Election</h5>
-            <p class="text-muted mb-0">Choose an election above to view and manage its parties</p>
-        </div>
-        
-        <!-- Empty Parties State -->
-        <div class="text-center py-5 d-none" id="empty-parties-state">
-            <i class="fas fa-users fa-4x text-muted mb-3"></i>
-            <h5 class="text-muted">No Parties Found</h5>
-            <p class="text-muted mb-4">Add the first political party for this election</p>
-            <button class="btn btn-primary">
-                <i class="fas fa-plus me-2"></i>Add First Party
-            </button>
-        </div>
-        
-        <!-- Parties Grid (Hidden until data exists) -->
-        <div class="row d-none" id="parties-grid">
-            <!-- Sample Party Card Template -->
-            <div class="col-md-6 col-lg-4 mb-3">
-                <div class="card border-primary">
-                    <div class="card-header bg-primary text-white">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h6 class="card-title mb-0">
-                                <i class="fas fa-flag me-2"></i>Party Name
-                            </h6>
-                            <div class="dropdown">
-                                <button class="btn btn-sm btn-outline-light" data-bs-toggle="dropdown">
-                                    <i class="fas fa-ellipsis-v"></i>
-                                </button>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="#"><i class="fas fa-edit me-2"></i>Edit</a></li>
-                                    <li><a class="dropdown-item" href="#"><i class="fas fa-users me-2"></i>View Candidates</a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash me-2"></i>Delete</a></li>
-                                </ul>
-                            </div>
+<div class="card border-0 shadow-sm">
+  <div class="card-body">
+    @if($parties->isEmpty())
+      <div class="text-center text-muted py-4">No parties found.</div>
+    @else
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Name</th>
+              <th>Election</th>
+              <th>Color</th>
+              <th>Description</th>
+              <th class="text-center">Candidates</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @foreach($parties as $party)
+              <tr>
+                <td class="fw-semibold">{{ $party->name }}</td>
+                <td class="text-muted small">{{ optional($party->election)->title }}</td>
+                <td><span class="badge" style="background-color: {{ $party->color ?? '#e9ecef' }}">{{ $party->color ?? '—' }}</span></td>
+                <td class="text-muted small">{{ \Illuminate\Support\Str::limit($party->description, 80) }}</td>
+                <td class="text-center">{{ $party->candidates_count }}</td>
+                <td class="text-end">
+                  <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editPartyModal-{{ $party->id }}"><i class="fas fa-edit"></i></button>
+                  <form action="{{ route('admin.parties.destroy', [$party->election_id, $party->id]) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this party?');">
+                    @csrf
+                    @method('DELETE')
+                    <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                  </form>
+                </td>
+              </tr>
+
+              <div class="modal fade" id="editPartyModal-{{ $party->id }}" tabindex="-1">
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <form method="POST" action="{{ route('admin.parties.update', [$party->election_id, $party->id]) }}">
+                      @csrf
+                      @method('PUT')
+                      <div class="modal-header">
+                        <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Edit Party</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                      </div>
+                      <div class="modal-body">
+                        <div class="mb-3">
+                          <label class="form-label">Name</label>
+                          <input type="text" name="name" class="form-control" value="{{ $party->name }}" required>
                         </div>
-                    </div>
-                    <div class="card-body">
-                        <p class="card-text text-muted">Party description goes here...</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted">
-                                <i class="fas fa-user-tie me-1"></i>0 Candidates
-                            </small>
-                            <span class="badge" style="background-color: #007bff;">#PartyColor</span>
+                        <div class="mb-3">
+                          <label class="form-label">Color</label>
+                          <input type="text" name="color" class="form-control" value="{{ $party->color }}" placeholder="#0d6efd">
                         </div>
-                    </div>
+                        <div class="mb-3">
+                          <label class="form-label">Description</label>
+                          <textarea name="description" class="form-control" rows="3">{{ $party->description }}</textarea>
+                        </div>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                      </div>
+                    </form>
+                  </div>
                 </div>
-            </div>
-        </div>
-    </div>
+              </div>
+            @endforeach
+          </tbody>
+        </table>
+      </div>
+      <div>
+        {{ $parties->links() }}
+      </div>
+    @endif
+  </div>
 </div>
 
-<script>
-function loadParties() {
-    const electionId = document.getElementById('election_select').value;
-    if (!electionId) {
-        alert('Please select an election first.');
-        return;
-    }
-    
-    // Implementation will load parties for selected election
-    console.log('Loading parties for election:', electionId);
-}
-</script>
+<div class="modal fade" id="addPartyModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="{{ route('admin.parties.store', $selectedElection ? \App\Models\Election::find($selectedElection) : ($elections->first() ?? null)) }}">
+        @csrf
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fas fa-plus me-2"></i>Add Party</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Election</label>
+            <select name="election_id" class="form-select" required>
+              @foreach($elections as $e)
+                <option value="{{ $e->id }}" {{ (string)$selectedElection === (string)$e->id ? 'selected' : '' }}>{{ $e->title }}</option>
+              @endforeach
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Name</label>
+            <input type="text" name="name" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Color</label>
+            <input type="text" name="color" class="form-control" placeholder="#0d6efd">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea name="description" class="form-control" rows="3"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 @endsection
