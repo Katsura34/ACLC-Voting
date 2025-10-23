@@ -15,18 +15,30 @@ class VoteController extends Controller
     {
         $user = auth()->user();
 
-        // Load the active election
+        // Load the active election - be more flexible with the query
         $election = Election::with(['positions' => function($q){
                 $q->orderBy('order');
             }, 'positions.candidates.party'])
             ->where('is_active', true)
-            ->where('status', 'active')
-            ->latest('start_date')
             ->first();
+
+        // If no active election, try to get the latest one regardless of status for debugging
+        if (!$election) {
+            $election = Election::with(['positions' => function($q){
+                    $q->orderBy('order');
+                }, 'positions.candidates.party'])
+                ->latest('created_at')
+                ->first();
+        }
 
         return view('student.vote', [
             'user' => $user,
             'election' => $election,
+            'debug' => [
+                'elections_count' => Election::count(),
+                'active_elections_count' => Election::where('is_active', true)->count(),
+                'user_voted' => $user->has_voted,
+            ]
         ]);
     }
 
@@ -34,7 +46,14 @@ class VoteController extends Controller
     {
         $user = auth()->user();
 
-        $election = Election::with('positions')->where('is_active', true)->where('status', 'active')->firstOrFail();
+        // Find active election
+        $election = Election::with('positions')
+            ->where('is_active', true)
+            ->first();
+            
+        if (!$election) {
+            return redirect()->route('student.dashboard')->with('error', 'No active election found.');
+        }
 
         if ($user->has_voted) {
             return redirect()->route('student.dashboard')->with('error', 'You have already cast your vote.');
