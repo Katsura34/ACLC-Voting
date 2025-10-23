@@ -76,7 +76,7 @@
                 <td class="text-center">{{ $party->candidates_count }}</td>
                 <td class="text-end">
                   <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editPartyModal-{{ $party->id }}"><i class="fas fa-edit"></i></button>
-                  <form action="{{ route('admin.parties.destroy', [$party->election_id, $party->id]) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this party?');">
+                  <form action="{{ url('/admin/elections/'.$party->election_id.'/parties/'.$party->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this party?');">
                     @csrf
                     @method('DELETE')
                     <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
@@ -87,7 +87,7 @@
               <div class="modal fade" id="editPartyModal-{{ $party->id }}" tabindex="-1">
                 <div class="modal-dialog">
                   <div class="modal-content">
-                    <form method="POST" action="{{ route('admin.parties.update', [$party->election_id, $party->id]) }}">
+                    <form method="POST" action="{{ url('/admin/elections/'.$party->election_id.'/parties/'.$party->id) }}">
                       @csrf
                       @method('PUT')
                       <div class="modal-header">
@@ -130,7 +130,7 @@
 <div class="modal fade" id="addPartyModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form method="POST" action="{{ route('admin.parties.store', ['election' => old('election_id', $selectedElection)]) }}">
+      <form id="addPartyForm" method="POST" action="#">
         @csrf
         <div class="modal-header">
           <h5 class="modal-title"><i class="fas fa-plus me-2"></i>Add Party</h5>
@@ -139,13 +139,12 @@
         <div class="modal-body">
           <div class="mb-3">
             <label class="form-label">Election</label>
-            <select name="election_id" class="form-select" required>
+            <select name="election_id" id="partyElectionSelect" class="form-select" required>
               <option value="">Select election</option>
               @foreach($elections as $e)
-                <option value="{{ $e->id }}" {{ (string)old('election_id', $selectedElection) === (string)$e->id ? 'selected' : '' }}>{{ $e->title }}</option>
+                <option value="{{ $e->id }}" {{ (string)$selectedElection === (string)$e->id ? 'selected' : '' }}>{{ $e->title }}</option>
               @endforeach
             </select>
-            <small class="text-muted">Required to route to nested store endpoint.</small>
           </div>
           <div class="mb-3">
             <label class="form-label">Name</label>
@@ -168,4 +167,18 @@
     </div>
   </div>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function(){
+    const select = document.getElementById('partyElectionSelect');
+    const form = document.getElementById('addPartyForm');
+    const base = '{{ url('/admin/elections') }}';
+    function updateAction(){
+      const id = select.value;
+      form.action = id ? `${base}/${id}/parties` : '#';
+    }
+    select.addEventListener('change', updateAction);
+    updateAction();
+  });
+</script>
 @endsection
