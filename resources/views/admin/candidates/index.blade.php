@@ -91,7 +91,7 @@
                 <td class="text-muted small">{{ trim(($c->course ?? '').' '.($c->year_level ?? '')) }}</td>
                 <td class="text-end">
                   <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editCandidateModal-{{ $c->id }}"><i class="fas fa-edit"></i></button>
-                  <form action="{{ route('admin.candidates.destroy', [$c->election_id, $c->id]) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this candidate?');">
+                  <form action="{{ url('/admin/elections/'.$c->election_id.'/candidates/'.$c->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this candidate?');">
                     @csrf
                     @method('DELETE')
                     <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
@@ -102,7 +102,7 @@
               <div class="modal fade" id="editCandidateModal-{{ $c->id }}" tabindex="-1">
                 <div class="modal-dialog modal-lg">
                   <div class="modal-content">
-                    <form method="POST" action="{{ route('admin.candidates.update', [$c->election_id, $c->id]) }}">
+                    <form method="POST" action="{{ url('/admin/elections/'.$c->election_id.'/candidates/'.$c->id) }}">
                       @csrf
                       @method('PUT')
                       <div class="modal-header">
@@ -174,7 +174,7 @@
 <div class="modal fade" id="addCandidateModal" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
-      <form method="POST" action="{{ route('admin.candidates.store', ['election' => old('election_id', $selectedElection)]) }}">
+      <form id="addCandidateForm" method="POST" action="#">
         @csrf
         <div class="modal-header">
           <h5 class="modal-title"><i class="fas fa-plus me-2"></i>Add Candidate</h5>
@@ -184,17 +184,16 @@
           <div class="row g-3">
             <div class="col-md-6">
               <label class="form-label">Election</label>
-              <select name="election_id" class="form-select" required>
+              <select name="election_id" id="candidateElectionSelect" class="form-select" required>
                 <option value="">Select election</option>
                 @foreach($elections as $e)
-                  <option value="{{ $e->id }}" {{ (string)old('election_id', $selectedElection) === (string)$e->id ? 'selected' : '' }}>{{ $e->title }}</option>
+                  <option value="{{ $e->id }}" {{ (string)$selectedElection === (string)$e->id ? 'selected' : '' }}>{{ $e->title }}</option>
                 @endforeach
               </select>
-              <small class="text-muted">Required to route to nested store endpoint.</small>
             </div>
             <div class="col-md-6">
               <label class="form-label">Position</label>
-              <select name="position_id" class="form-select" required>
+              <select name="position_id" id="candidatePositionSelect" class="form-select" required>
                 @php $positionsDefault = $selectedElection ? optional($elections->firstWhere('id', (int)$selectedElection))->positions : collect(); @endphp
                 @foreach($positionsDefault ?? [] as $p)
                   <option value="{{ $p->id }}">{{ $p->name }}</option>
@@ -203,7 +202,7 @@
             </div>
             <div class="col-md-6">
               <label class="form-label">Party (optional)</label>
-              <select name="party_id" class="form-select">
+              <select name="party_id" id="candidatePartySelect" class="form-select">
                 <option value="">Independent</option>
                 @php $partyDefault = $selectedElection ? \App\Models\Party::where('election_id', $selectedElection)->orderBy('name')->get() : collect(); @endphp
                 @foreach($partyDefault as $p)
@@ -241,4 +240,24 @@
     </div>
   </div>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function(){
+    const eSel = document.getElementById('candidateElectionSelect');
+    const pSel = document.getElementById('candidatePositionSelect');
+    const form = document.getElementById('addCandidateForm');
+    const base = '{{ url('/admin/elections') }}';
+
+    function updateAction(){
+      const id = eSel.value;
+      form.action = id ? `${base}/${id}/candidates` : '#';
+    }
+
+    eSel.addEventListener('change', function(){
+      updateAction();
+    });
+
+    updateAction();
+  });
+</script>
 @endsection
