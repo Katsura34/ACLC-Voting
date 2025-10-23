@@ -41,16 +41,23 @@
                         <input type="datetime-local" name="end_date" class="form-control @error('end_date') is-invalid @enderror" value="{{ old('end_date') }}">
                         @error('end_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
+
+                    <!-- Hidden inputs ensure unchecked checkboxes submit as 0 for boolean validation -->
+                    <input type="hidden" name="is_active" value="0">
                     <div class="form-check form-switch mb-2">
-                        <input class="form-check-input" type="checkbox" name="is_active" id="is_active" {{ old('is_active') ? 'checked' : '' }}>
+                        <input class="form-check-input" type="checkbox" name="is_active" id="is_active" value="1" {{ old('is_active') ? 'checked' : '' }}>
                         <label class="form-check-label" for="is_active">Set as Active</label>
                     </div>
+
+                    <input type="hidden" name="allow_abstain" value="0">
                     <div class="form-check form-switch mb-2">
-                        <input class="form-check-input" type="checkbox" name="allow_abstain" id="allow_abstain" {{ old('allow_abstain') ? 'checked' : '' }}>
+                        <input class="form-check-input" type="checkbox" name="allow_abstain" id="allow_abstain" value="1" {{ old('allow_abstain') ? 'checked' : '' }}>
                         <label class="form-check-label" for="allow_abstain">Allow Abstain</label>
                     </div>
+
+                    <input type="hidden" name="show_live_results" value="0">
                     <div class="form-check form-switch mb-3">
-                        <input class="form-check-input" type="checkbox" name="show_live_results" id="show_live_results" {{ old('show_live_results') ? 'checked' : '' }}>
+                        <input class="form-check-input" type="checkbox" name="show_live_results" id="show_live_results" value="1" {{ old('show_live_results') ? 'checked' : '' }}>
                         <label class="form-check-label" for="show_live_results">Show Live Results</label>
                     </div>
                 </div>
