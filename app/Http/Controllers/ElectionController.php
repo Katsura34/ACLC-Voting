@@ -6,7 +6,6 @@ use App\Models\Election;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
 
 class ElectionController extends Controller
 {
@@ -33,9 +32,11 @@ class ElectionController extends Controller
             'show_live_results' => 'sometimes|boolean',
         ]);
 
+        // Coerce checkbox inputs to real booleans regardless of raw values
         $data['is_active'] = $request->boolean('is_active');
         $data['allow_abstain'] = $request->boolean('allow_abstain');
         $data['show_live_results'] = $request->boolean('show_live_results');
+
         $data['status'] = $data['is_active'] ? 'active' : 'draft';
         $data['total_registered_voters'] = User::students()->count();
         $data['total_votes_cast'] = 0;
@@ -70,11 +71,19 @@ class ElectionController extends Controller
             'show_live_results' => 'sometimes|boolean',
         ]);
 
+        // Coerce checkbox inputs to real booleans regardless of raw values
         $data['is_active'] = $request->boolean('is_active');
         $data['allow_abstain'] = $request->boolean('allow_abstain');
         $data['show_live_results'] = $request->boolean('show_live_results');
 
-        // Recompute analytics if requested
+        // Keep status consistent with is_active if needed
+        if ($data['is_active'] && $data['status'] === 'draft') {
+            $data['status'] = 'active';
+        }
+        if (!$data['is_active'] && $data['status'] === 'active') {
+            $data['status'] = 'draft';
+        }
+
         if ($request->boolean('recompute_stats')) {
             $data['total_registered_voters'] = User::students()->count();
             $data['voting_percentage'] = $election->total_registered_voters > 0
@@ -115,16 +124,11 @@ class ElectionController extends Controller
     public function resetVotes(Election $election)
     {
         DB::transaction(function () use ($election) {
-            // Clear votes for this election
             $election->votes()->delete();
-
-            // Reset analytics and user flags
             $election->update([
                 'total_votes_cast' => 0,
                 'voting_percentage' => 0.00,
             ]);
-
-            // Mark all users as not voted
             \App\Models\User::query()->update(['has_voted' => false]);
         });
 
