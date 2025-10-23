@@ -97,7 +97,7 @@
         <div class="card mb-3">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <strong>Positions</strong>
-                <a href="#" class="btn btn-sm btn-primary"><i class="fas fa-plus me-1"></i>Add Position</a>
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addPositionModal"><i class="fas fa-plus me-1"></i>Add Position</button>
             </div>
             <div class="card-body">
                 @if($election->positions->isEmpty())
@@ -111,10 +111,48 @@
                                     <span class="text-muted small ms-2">Max winners: {{ $pos->max_winners }}</span>
                                 </div>
                                 <div class="btn-group btn-group-sm">
-                                    <a href="#" class="btn btn-outline-secondary"><i class="fas fa-edit"></i></a>
-                                    <a href="#" class="btn btn-outline-danger"><i class="fas fa-trash"></i></a>
+                                    <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editPositionModal-{{ $pos->id }}"><i class="fas fa-edit"></i></button>
+                                    <form action="{{ route('admin.positions.destroy', [$election, $pos]) }}" method="POST" onsubmit="return confirm('Delete this position?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-outline-danger"><i class="fas fa-trash"></i></button>
+                                    </form>
                                 </div>
                             </li>
+
+                            <!-- Edit Position Modal -->
+                            <div class="modal fade" id="editPositionModal-{{ $pos->id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <form method="POST" action="{{ route('admin.positions.update', [$election, $pos]) }}">
+                                            @csrf
+                                            @method('PUT')
+                                            <div class="modal-header">
+                                                <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Edit Position</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Name</label>
+                                                    <input type="text" name="name" class="form-control" value="{{ $pos->name }}" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Max Winners</label>
+                                                    <input type="number" name="max_winners" class="form-control" value="{{ $pos->max_winners }}" min="1" max="25" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Order</label>
+                                                    <input type="number" name="order" class="form-control" value="{{ $pos->order }}" min="0">
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-primary">Save</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
                         @endforeach
                     </ul>
                 @endif
@@ -124,7 +162,7 @@
         <div class="card mb-3">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <strong>Parties</strong>
-                <a href="#" class="btn btn-sm btn-primary"><i class="fas fa-plus me-1"></i>Add Party</a>
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addPartyModal"><i class="fas fa-plus me-1"></i>Add Party</button>
             </div>
             <div class="card-body">
                 @if($election->parties->isEmpty())
@@ -135,11 +173,54 @@
                             <div class="col-md-6 mb-3">
                                 <div class="card h-100">
                                     <div class="card-header" style="background-color: {{ $party->color ?? '#e9ecef' }}22;">
-                                        <strong>{{ $party->name }}</strong>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <strong>{{ $party->name }}</strong>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editPartyModal-{{ $party->id }}"><i class="fas fa-edit"></i></button>
+                                                <form action="{{ route('admin.parties.destroy', [$election, $party]) }}" method="POST" onsubmit="return confirm('Delete this party?');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-outline-danger"><i class="fas fa-trash"></i></button>
+                                                </form>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div class="card-body">
                                         <p class="text-muted small">{{ $party->description }}</p>
-                                        <a href="#" class="btn btn-outline-primary btn-sm">View Candidates</a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Edit Party Modal -->
+                            <div class="modal fade" id="editPartyModal-{{ $party->id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <form method="POST" action="{{ route('admin.parties.update', [$election, $party]) }}">
+                                            @csrf
+                                            @method('PUT')
+                                            <div class="modal-header">
+                                                <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Edit Party</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Name</label>
+                                                    <input type="text" name="name" class="form-control" value="{{ $party->name }}" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Color (hex or name)</label>
+                                                    <input type="text" name="color" class="form-control" value="{{ $party->color }}" placeholder="#0d6efd">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Description</label>
+                                                    <textarea name="description" class="form-control" rows="3">{{ $party->description }}</textarea>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-primary">Save</button>
+                                            </div>
+                                        </form>
                                     </div>
                                 </div>
                             </div>
@@ -152,7 +233,7 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <strong>Candidates</strong>
-                <a href="#" class="btn btn-sm btn-primary"><i class="fas fa-plus me-1"></i>Add Candidate</a>
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addCandidateModal"><i class="fas fa-plus me-1"></i>Add Candidate</button>
             </div>
             <div class="card-body">
                 @if($election->candidates->isEmpty())
@@ -173,20 +254,239 @@
                                     <tr>
                                         <td>{{ $c->first_name }} {{ $c->last_name }}</td>
                                         <td>{{ optional($c->position)->name }}</td>
-                                        <td>{{ optional($c->party)->name }}</td>
+                                        <td>{{ optional($c->party)->name ?? 'Independent' }}</td>
                                         <td class="text-end">
                                             <div class="btn-group btn-group-sm">
-                                                <a href="#" class="btn btn-outline-secondary"><i class="fas fa-edit"></i></a>
-                                                <a href="#" class="btn btn-outline-danger"><i class="fas fa-trash"></i></a>
+                                                <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editCandidateModal-{{ $c->id }}"><i class="fas fa-edit"></i></button>
+                                                <form action="{{ route('admin.candidates.destroy', [$election, $c]) }}" method="POST" onsubmit="return confirm('Delete this candidate?');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-outline-danger"><i class="fas fa-trash"></i></button>
+                                                </form>
                                             </div>
                                         </td>
                                     </tr>
+
+                                    <!-- Edit Candidate Modal -->
+                                    <div class="modal fade" id="editCandidateModal-{{ $c->id }}" tabindex="-1">
+                                        <div class="modal-dialog modal-lg">
+                                            <div class="modal-content">
+                                                <form method="POST" action="{{ route('admin.candidates.update', [$election, $c]) }}">
+                                                    @csrf
+                                                    @method('PUT')
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Edit Candidate</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <div class="row">
+                                                            <div class="col-md-6">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">First Name</label>
+                                                                    <input type="text" name="first_name" class="form-control" value="{{ $c->first_name }}" required>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Last Name</label>
+                                                                    <input type="text" name="last_name" class="form-control" value="{{ $c->last_name }}" required>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Position</label>
+                                                                    <select name="position_id" class="form-select" required>
+                                                                        @foreach($election->positions as $pos)
+                                                                            <option value="{{ $pos->id }}" {{ $c->position_id == $pos->id ? 'selected' : '' }}>{{ $pos->name }}</option>
+                                                                        @endforeach
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Party (optional)</label>
+                                                                    <select name="party_id" class="form-select">
+                                                                        <option value="">Independent</option>
+                                                                        @foreach($election->parties as $party)
+                                                                            <option value="{{ $party->id }}" {{ $c->party_id == $party->id ? 'selected' : '' }}>{{ $party->name }}</option>
+                                                                        @endforeach
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Course</label>
+                                                                    <input type="text" name="course" class="form-control" value="{{ $c->course }}">
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Year Level</label>
+                                                                    <input type="text" name="year_level" class="form-control" value="{{ $c->year_level }}">
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-12">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Bio</label>
+                                                                    <textarea name="bio" class="form-control" rows="3">{{ $c->bio }}</textarea>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                        <button type="submit" class="btn btn-primary">Save</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
                                 @endforeach
                             </tbody>
                         </table>
                     </div>
                 @endif
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Position Modal -->
+<div class="modal fade" id="addPositionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ route('admin.positions.store', $election) }}">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-plus me-2"></i>Add Position</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Max Winners</label>
+                        <input type="number" name="max_winners" class="form-control" min="1" max="25" value="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Order</label>
+                        <input type="number" name="order" class="form-control" min="0" value="0">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Party Modal -->
+<div class="modal fade" id="addPartyModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ route('admin.parties.store', $election) }}">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-plus me-2"></i>Add Party</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Color (hex or name)</label>
+                        <input type="text" name="color" class="form-control" placeholder="#0d6efd">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Candidate Modal -->
+<div class="modal fade" id="addCandidateModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="POST" action="{{ route('admin.candidates.store', $election) }}">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-plus me-2"></i>Add Candidate</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">First Name</label>
+                                <input type="text" name="first_name" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Last Name</label>
+                                <input type="text" name="last_name" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Position</label>
+                                <select name="position_id" class="form-select" required>
+                                    @foreach($election->positions as $pos)
+                                        <option value="{{ $pos->id }}">{{ $pos->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Party (optional)</label>
+                                <select name="party_id" class="form-select">
+                                    <option value="">Independent</option>
+                                    @foreach($election->parties as $party)
+                                        <option value="{{ $party->id }}">{{ $party->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Course</label>
+                                <input type="text" name="course" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Year Level</label>
+                                <input type="text" name="year_level" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label class="form-label">Bio</label>
+                                <textarea name="bio" class="form-control" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
