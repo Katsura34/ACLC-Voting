@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ElectionController;
 use Illuminate\Support\Facades\Route;
 
 // Home redirect based on role or to login if guest
@@ -23,7 +24,6 @@ Route::controller(AuthController::class)->group(function () {
     Route::post('/logout', 'logout')->name('logout')->middleware('auth');
 
     // TEMP: Open registration to everyone for sample user creation during setup
-    // NOTE: Remove guest access later and restore admin-only protection when going live
     Route::get('/register', 'showRegister')->name('register')->middleware('guest');
     Route::post('/register', 'register')->name('register.post')->middleware('guest');
 });
@@ -34,8 +34,24 @@ Route::prefix('admin')
     ->as('admin.')
     ->group(function () {
         Route::get('/dashboard', fn () => view('admin.dashboard'))->name('dashboard');
-        Route::get('/elections', fn () => view('admin.elections.index'))->name('elections.index');
+
+        // Elections CRUD
+        Route::get('/elections', [ElectionController::class, 'index'])->name('elections.index');
+        Route::get('/elections/create', [ElectionController::class, 'create'])->name('elections.create');
+        Route::post('/elections', [ElectionController::class, 'store'])->name('elections.store');
+        Route::get('/elections/{election}', [ElectionController::class, 'show'])->name('elections.show');
+        Route::get('/elections/{election}/edit', [ElectionController::class, 'edit'])->name('elections.edit');
+        Route::put('/elections/{election}', [ElectionController::class, 'update'])->name('elections.update');
+        Route::delete('/elections/{election}', [ElectionController::class, 'destroy'])->name('elections.destroy');
+
+        // Actions
+        Route::post('/elections/{election}/toggle', [ElectionController::class, 'toggle'])->name('elections.toggle');
+        Route::post('/elections/{election}/publish', [ElectionController::class, 'publishResults'])->name('elections.publish');
+        Route::post('/elections/{election}/reset', [ElectionController::class, 'resetVotes'])->name('elections.reset');
+
+        // Parties
         Route::get('/parties', fn () => view('admin.parties.index'))->name('parties.index');
+        // Candidates
         Route::get('/candidates', fn () => view('admin.candidates.index'))->name('candidates.index');
     });
 
