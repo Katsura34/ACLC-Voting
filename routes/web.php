@@ -5,6 +5,7 @@ use App\Http\Controllers\ElectionController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\PartyController;
 use App\Http\Controllers\CandidateController;
+use App\Http\Controllers\VoteController;
 use Illuminate\Support\Facades\Route;
 
 // Home redirect based on role or to login if guest
@@ -19,14 +20,9 @@ Route::get('/', function () {
 
 // Auth routes
 Route::controller(AuthController::class)->group(function () {
-    // Login (guest only)
     Route::get('/login', 'showLogin')->name('login')->middleware('guest');
     Route::post('/login', 'login')->name('login.post');
-
-    // Logout (auth only)
     Route::post('/logout', 'logout')->name('logout')->middleware('auth');
-
-    // TEMP: Open registration to everyone for sample user creation during setup
     Route::get('/register', 'showRegister')->name('register')->middleware('guest');
     Route::post('/register', 'register')->name('register.post')->middleware('guest');
 });
@@ -46,8 +42,6 @@ Route::prefix('admin')
         Route::get('/elections/{election}/edit', [ElectionController::class, 'edit'])->name('elections.edit');
         Route::put('/elections/{election}', [ElectionController::class, 'update'])->name('elections.update');
         Route::delete('/elections/{election}', [ElectionController::class, 'destroy'])->name('elections.destroy');
-
-        // Election actions
         Route::post('/elections/{election}/toggle', [ElectionController::class, 'toggle'])->name('elections.toggle');
         Route::post('/elections/{election}/publish', [ElectionController::class, 'publishResults'])->name('elections.publish');
         Route::post('/elections/{election}/reset', [ElectionController::class, 'resetVotes'])->name('elections.reset');
@@ -78,5 +72,6 @@ Route::prefix('student')
     ->as('student.')
     ->group(function () {
         Route::get('/dashboard', fn () => view('student.dashboard'))->name('dashboard');
-        Route::get('/vote', fn () => view('student.vote'))->name('vote');
+        Route::get('/vote', [VoteController::class, 'show'])->name('vote');
+        Route::post('/vote', [VoteController::class, 'submit'])->name('vote.submit');
     });
