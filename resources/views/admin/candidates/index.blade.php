@@ -174,7 +174,7 @@
 <div class="modal fade" id="addCandidateModal" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
-      <form method="POST" action="{{ route('admin.candidates.store', $selectedElection ? \App\Models\Election::find($selectedElection) : ($elections->first() ?? null)) }}">
+      <form method="POST" action="{{ route('admin.candidates.store', ['election' => old('election_id', $selectedElection)]) }}">
         @csrf
         <div class="modal-header">
           <h5 class="modal-title"><i class="fas fa-plus me-2"></i>Add Candidate</h5>
@@ -185,10 +185,12 @@
             <div class="col-md-6">
               <label class="form-label">Election</label>
               <select name="election_id" class="form-select" required>
+                <option value="">Select election</option>
                 @foreach($elections as $e)
-                  <option value="{{ $e->id }}" {{ (string)$selectedElection === (string)$e->id ? 'selected' : '' }}>{{ $e->title }}</option>
+                  <option value="{{ $e->id }}" {{ (string)old('election_id', $selectedElection) === (string)$e->id ? 'selected' : '' }}>{{ $e->title }}</option>
                 @endforeach
               </select>
+              <small class="text-muted">Required to route to nested store endpoint.</small>
             </div>
             <div class="col-md-6">
               <label class="form-label">Position</label>
