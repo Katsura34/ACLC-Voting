@@ -1,10 +1,12 @@
 <?php
 
+use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CandidateController;
 use App\Http\Controllers\ElectionController;
 use App\Http\Controllers\PartyController;
 use App\Http\Controllers\PositionController;
+use App\Http\Controllers\StudentDashboardController;
 use App\Http\Controllers\VoteController;
 use Illuminate\Support\Facades\Route;
 
@@ -30,7 +32,7 @@ Route::prefix('admin')
     ->middleware(['web', 'auth', 'admin'])
     ->as('admin.')
     ->group(function () {
-        Route::get('/dashboard', fn () => view('admin.dashboard'))->name('dashboard');
+        Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 
         // Elections CRUD
         Route::get('/elections', [ElectionController::class, 'index'])->name('elections.index');
@@ -73,7 +75,7 @@ Route::prefix('student')
     ->middleware(['web', 'auth', 'student'])
     ->as('student.')
     ->group(function () {
-        Route::get('/dashboard', fn () => view('student.dashboard'))->name('dashboard');
+        Route::get('/dashboard', [StudentDashboardController::class, 'index'])->name('dashboard');
         Route::get('/vote', [VoteController::class, 'show'])->name('vote');
         Route::post('/vote', [VoteController::class, 'submit'])->name('vote.submit');
     });
