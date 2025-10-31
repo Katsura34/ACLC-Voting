@@ -32,14 +32,14 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
-            
+
             $user = Auth::user();
-            
+
             // Redirect based on user type
             if ($user->isAdmin()) {
                 return redirect()->intended('/admin/dashboard');
             }
-            
+
             return redirect()->intended('/student/dashboard');
         }
 
@@ -54,10 +54,10 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         Auth::logout();
-        
+
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        
+
         return redirect('/login');
     }
 

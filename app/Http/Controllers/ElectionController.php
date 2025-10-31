@@ -12,6 +12,7 @@ class ElectionController extends Controller
     public function index()
     {
         $elections = Election::orderByDesc('created_at')->paginate(10);
+
         return view('admin.elections.index', compact('elections'));
     }
 
@@ -50,6 +51,7 @@ class ElectionController extends Controller
     public function show(Election $election)
     {
         $election->load(['positions', 'parties', 'candidates']);
+
         return view('admin.elections.show', compact('election'));
     }
 
@@ -80,7 +82,7 @@ class ElectionController extends Controller
         if ($data['is_active'] && $data['status'] === 'draft') {
             $data['status'] = 'active';
         }
-        if (!$data['is_active'] && $data['status'] === 'active') {
+        if (! $data['is_active'] && $data['status'] === 'active') {
             $data['status'] = 'draft';
         }
 
@@ -99,6 +101,7 @@ class ElectionController extends Controller
     public function destroy(Election $election)
     {
         $election->delete();
+
         return redirect()->route('admin.elections.index')->with('success', 'Election deleted.');
     }
 

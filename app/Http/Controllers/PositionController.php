@@ -43,6 +43,7 @@ class PositionController extends Controller
         $this->authorizePosition($election, $position);
 
         $position->delete();
+
         return back()->with('success', 'Position deleted.');
     }
 

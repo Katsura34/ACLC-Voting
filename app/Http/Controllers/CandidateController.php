@@ -25,7 +25,7 @@ class CandidateController extends Controller
 
         // Ensure selected position and party (if provided) belong to this election
         abort_unless(Position::where('id', $data['position_id'])->where('election_id', $election->id)->exists(), 404);
-        if (!empty($data['party_id'])) {
+        if (! empty($data['party_id'])) {
             abort_unless(Party::where('id', $data['party_id'])->where('election_id', $election->id)->exists(), 404);
         }
 
@@ -52,7 +52,7 @@ class CandidateController extends Controller
 
         // Ensure selected position and party (if provided) belong to this election
         abort_unless(Position::where('id', $data['position_id'])->where('election_id', $election->id)->exists(), 404);
-        if (!empty($data['party_id'])) {
+        if (! empty($data['party_id'])) {
             abort_unless(Party::where('id', $data['party_id'])->where('election_id', $election->id)->exists(), 404);
         }
 
@@ -66,6 +66,7 @@ class CandidateController extends Controller
         $this->authorizeCandidate($election, $candidate);
 
         $candidate->delete();
+
         return back()->with('success', 'Candidate deleted.');
     }
 

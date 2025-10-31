@@ -1,10 +1,10 @@
 <?php
 
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\ElectionController;
-use App\Http\Controllers\PositionController;
-use App\Http\Controllers\PartyController;
 use App\Http\Controllers\CandidateController;
+use App\Http\Controllers\ElectionController;
+use App\Http\Controllers\PartyController;
+use App\Http\Controllers\PositionController;
 use App\Http\Controllers\VoteController;
 use Illuminate\Support\Facades\Route;
 
@@ -14,6 +14,7 @@ Route::get('/', function () {
             ? redirect()->route('admin.dashboard')
             : redirect()->route('student.dashboard');
     }
+
     return redirect()->route('login');
 })->name('home');
 
@@ -26,7 +27,7 @@ Route::controller(AuthController::class)->group(function () {
 });
 
 Route::prefix('admin')
-    ->middleware(['web','auth','admin'])
+    ->middleware(['web', 'auth', 'admin'])
     ->as('admin.')
     ->group(function () {
         Route::get('/dashboard', fn () => view('admin.dashboard'))->name('dashboard');
@@ -69,7 +70,7 @@ Route::prefix('admin')
     });
 
 Route::prefix('student')
-    ->middleware(['web','auth','student'])
+    ->middleware(['web', 'auth', 'student'])
     ->as('student.')
     ->group(function () {
         Route::get('/dashboard', fn () => view('student.dashboard'))->name('dashboard');

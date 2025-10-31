@@ -46,6 +46,7 @@ class PartyController extends Controller
         $this->authorizeParty($election, $party);
 
         $party->delete();
+
         return back()->with('success', 'Party deleted.');
     }
 
