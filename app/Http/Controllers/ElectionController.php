@@ -4,24 +4,26 @@ namespace App\Http\Controllers;
 
 use App\Models\Election;
 use App\Models\User;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ElectionController extends Controller
 {
-    public function index()
+    public function index(): View
     {
         $elections = Election::orderByDesc('created_at')->paginate(10);
 
         return view('admin.elections.index', compact('elections'));
     }
 
-    public function create()
+    public function create(): View
     {
         return view('admin.elections.create');
     }
 
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
             'title' => 'required|string|max:255',
@@ -48,19 +50,19 @@ class ElectionController extends Controller
         return redirect()->route('admin.elections.show', $election)->with('success', 'Election created successfully.');
     }
 
-    public function show(Election $election)
+    public function show(Election $election): View
     {
         $election->load(['positions', 'parties', 'candidates']);
 
         return view('admin.elections.show', compact('election'));
     }
 
-    public function edit(Election $election)
+    public function edit(Election $election): View
     {
         return view('admin.elections.edit', compact('election'));
     }
 
-    public function update(Request $request, Election $election)
+    public function update(Request $request, Election $election): RedirectResponse
     {
         $data = $request->validate([
             'title' => 'required|string|max:255',
@@ -98,14 +100,14 @@ class ElectionController extends Controller
         return redirect()->route('admin.elections.show', $election)->with('success', 'Election updated successfully.');
     }
 
-    public function destroy(Election $election)
+    public function destroy(Election $election): RedirectResponse
     {
         $election->delete();
 
         return redirect()->route('admin.elections.index')->with('success', 'Election deleted.');
     }
 
-    public function toggle(Election $election)
+    public function toggle(Election $election): RedirectResponse
     {
         $election->is_active = ! $election->is_active;
         $election->status = $election->is_active ? 'active' : 'draft';
@@ -114,7 +116,7 @@ class ElectionController extends Controller
         return back()->with('success', 'Election status updated.');
     }
 
-    public function publishResults(Election $election)
+    public function publishResults(Election $election): RedirectResponse
     {
         $election->update([
             'results_published' => true,
@@ -124,7 +126,7 @@ class ElectionController extends Controller
         return back()->with('success', 'Results published.');
     }
 
-    public function resetVotes(Election $election)
+    public function resetVotes(Election $election): RedirectResponse
     {
         DB::transaction(function () use ($election) {
             $election->votes()->delete();

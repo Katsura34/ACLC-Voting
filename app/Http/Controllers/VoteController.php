@@ -6,12 +6,14 @@ use App\Models\Candidate;
 use App\Models\Election;
 use App\Models\Position;
 use App\Models\Vote;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class VoteController extends Controller
 {
-    public function show()
+    public function show(): View
     {
         $user = auth()->user();
 
@@ -42,7 +44,7 @@ class VoteController extends Controller
         ]);
     }
 
-    public function submit(Request $request)
+    public function submit(Request $request): RedirectResponse
     {
         $user = auth()->user();
 

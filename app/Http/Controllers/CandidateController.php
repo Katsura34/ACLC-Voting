@@ -6,11 +6,12 @@ use App\Models\Candidate;
 use App\Models\Election;
 use App\Models\Party;
 use App\Models\Position;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class CandidateController extends Controller
 {
-    public function store(Request $request, Election $election)
+    public function store(Request $request, Election $election): RedirectResponse
     {
         $data = $request->validate([
             'first_name' => 'required|string|max:255',
@@ -35,7 +36,7 @@ class CandidateController extends Controller
         return back()->with('success', 'Candidate added.');
     }
 
-    public function update(Request $request, Election $election, Candidate $candidate)
+    public function update(Request $request, Election $election, Candidate $candidate): RedirectResponse
     {
         $this->authorizeCandidate($election, $candidate);
 
@@ -61,7 +62,7 @@ class CandidateController extends Controller
         return back()->with('success', 'Candidate updated.');
     }
 
-    public function destroy(Election $election, Candidate $candidate)
+    public function destroy(Election $election, Candidate $candidate): RedirectResponse
     {
         $this->authorizeCandidate($election, $candidate);
 
