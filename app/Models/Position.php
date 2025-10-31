@@ -18,6 +18,11 @@ class Position extends Model
         'order',
     ];
 
+    protected $casts = [
+        'max_winners' => 'integer',
+        'order' => 'integer',
+    ];
+
     public function election(): BelongsTo
     {
         return $this->belongsTo(Election::class);

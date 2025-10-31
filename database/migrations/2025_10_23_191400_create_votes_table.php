@@ -4,8 +4,10 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
-    public function up(): void {
+return new class extends Migration
+{
+    public function up(): void
+    {
         Schema::create('votes', function (Blueprint $table) {
             $table->id();
             $table->foreignId('election_id')->constrained('elections')->cascadeOnDelete();
@@ -17,12 +19,13 @@ return new class extends Migration {
             $table->timestamps();
 
             // Ensure one vote per user per position per election
-            $table->unique(['election_id','user_id','position_id'], 'votes_unique_user_position');
-            $table->index(['election_id','position_id','candidate_id']);
+            $table->unique(['election_id', 'user_id', 'position_id'], 'votes_unique_user_position');
+            $table->index(['election_id', 'position_id', 'candidate_id']);
         });
     }
 
-    public function down(): void {
+    public function down(): void
+    {
         Schema::dropIfExists('votes');
     }
 };

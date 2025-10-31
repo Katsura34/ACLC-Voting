@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -66,7 +67,7 @@ class User extends Authenticatable
     /**
      * Scope for admin users
      */
-    public function scopeAdmins($query)
+    public function scopeAdmins(Builder $query): Builder
     {
         return $query->where('user_type', 'admin');
     }
@@ -74,7 +75,7 @@ class User extends Authenticatable
     /**
      * Scope for student users
      */
-    public function scopeStudents($query)
+    public function scopeStudents(Builder $query): Builder
     {
         return $query->where('user_type', 'student');
     }
@@ -82,7 +83,7 @@ class User extends Authenticatable
     /**
      * Scope for users who have voted
      */
-    public function scopeHasVoted($query)
+    public function scopeHasVoted(Builder $query): Builder
     {
         return $query->where('has_voted', true);
     }
@@ -90,7 +91,7 @@ class User extends Authenticatable
     /**
      * Scope for users who have not voted
      */
-    public function scopeHasNotVoted($query)
+    public function scopeHasNotVoted(Builder $query): Builder
     {
         return $query->where('has_voted', false);
     }

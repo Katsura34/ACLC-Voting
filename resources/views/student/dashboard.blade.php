@@ -17,10 +17,6 @@
     </div>
 </div>
 
-@php
-    $activeElection = \App\Models\Election::where('is_active', true)->first();
-@endphp
-
 <div class="row mb-4">
     <div class="col-12">
         @if(auth()->user()->has_voted)

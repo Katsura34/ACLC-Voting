@@ -4,8 +4,10 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
-    public function up(): void {
+return new class extends Migration
+{
+    public function up(): void
+    {
         Schema::create('candidates', function (Blueprint $table) {
             $table->id();
             $table->foreignId('election_id')->constrained('elections')->cascadeOnDelete();
@@ -18,11 +20,12 @@ return new class extends Migration {
             $table->text('bio')->nullable();
             $table->string('photo_path')->nullable();
             $table->timestamps();
-            $table->index(['election_id','position_id']);
+            $table->index(['election_id', 'position_id']);
         });
     }
 
-    public function down(): void {
+    public function down(): void
+    {
         Schema::dropIfExists('candidates');
     }
 };

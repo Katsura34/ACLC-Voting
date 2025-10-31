@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -13,7 +15,7 @@ class AuthController extends Controller
     /**
      * Show the login form
      */
-    public function showLogin()
+    public function showLogin(): View
     {
         return view('auth.login');
     }
@@ -21,7 +23,7 @@ class AuthController extends Controller
     /**
      * Handle login attempt
      */
-    public function login(Request $request)
+    public function login(Request $request): RedirectResponse
     {
         $request->validate([
             'usn' => 'required|string',
@@ -32,14 +34,14 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
-            
+
             $user = Auth::user();
-            
+
             // Redirect based on user type
             if ($user->isAdmin()) {
                 return redirect()->intended('/admin/dashboard');
             }
-            
+
             return redirect()->intended('/student/dashboard');
         }
 
@@ -51,20 +53,20 @@ class AuthController extends Controller
     /**
      * Handle logout
      */
-    public function logout(Request $request)
+    public function logout(Request $request): RedirectResponse
     {
         Auth::logout();
-        
+
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        
+
         return redirect('/login');
     }
 
     /**
      * Show registration form (for admin use)
      */
-    public function showRegister()
+    public function showRegister(): View
     {
         return view('auth.register');
     }
@@ -72,7 +74,7 @@ class AuthController extends Controller
     /**
      * Handle user registration (for admin use)
      */
-    public function register(Request $request)
+    public function register(Request $request): RedirectResponse
     {
         $request->validate([
             'usn' => 'required|string|unique:users,usn',

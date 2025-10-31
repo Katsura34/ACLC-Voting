@@ -6,11 +6,12 @@ use App\Models\Candidate;
 use App\Models\Election;
 use App\Models\Party;
 use App\Models\Position;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class CandidateController extends Controller
 {
-    public function store(Request $request, Election $election)
+    public function store(Request $request, Election $election): RedirectResponse
     {
         $data = $request->validate([
             'first_name' => 'required|string|max:255',
@@ -25,7 +26,7 @@ class CandidateController extends Controller
 
         // Ensure selected position and party (if provided) belong to this election
         abort_unless(Position::where('id', $data['position_id'])->where('election_id', $election->id)->exists(), 404);
-        if (!empty($data['party_id'])) {
+        if (! empty($data['party_id'])) {
             abort_unless(Party::where('id', $data['party_id'])->where('election_id', $election->id)->exists(), 404);
         }
 
@@ -35,7 +36,7 @@ class CandidateController extends Controller
         return back()->with('success', 'Candidate added.');
     }
 
-    public function update(Request $request, Election $election, Candidate $candidate)
+    public function update(Request $request, Election $election, Candidate $candidate): RedirectResponse
     {
         $this->authorizeCandidate($election, $candidate);
 
@@ -52,7 +53,7 @@ class CandidateController extends Controller
 
         // Ensure selected position and party (if provided) belong to this election
         abort_unless(Position::where('id', $data['position_id'])->where('election_id', $election->id)->exists(), 404);
-        if (!empty($data['party_id'])) {
+        if (! empty($data['party_id'])) {
             abort_unless(Party::where('id', $data['party_id'])->where('election_id', $election->id)->exists(), 404);
         }
 
@@ -61,11 +62,12 @@ class CandidateController extends Controller
         return back()->with('success', 'Candidate updated.');
     }
 
-    public function destroy(Election $election, Candidate $candidate)
+    public function destroy(Election $election, Candidate $candidate): RedirectResponse
     {
         $this->authorizeCandidate($election, $candidate);
 
         $candidate->delete();
+
         return back()->with('success', 'Candidate deleted.');
     }
 

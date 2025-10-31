@@ -6,27 +6,29 @@ use App\Models\Candidate;
 use App\Models\Election;
 use App\Models\Position;
 use App\Models\Vote;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class VoteController extends Controller
 {
-    public function show()
+    public function show(): View
     {
         $user = auth()->user();
 
         // Load the active election - be more flexible with the query
-        $election = Election::with(['positions' => function($q){
-                $q->orderBy('order');
-            }, 'positions.candidates.party'])
+        $election = Election::with(['positions' => function ($q) {
+            $q->orderBy('order');
+        }, 'positions.candidates.party'])
             ->where('is_active', true)
             ->first();
 
         // If no active election, try to get the latest one regardless of status for debugging
-        if (!$election) {
-            $election = Election::with(['positions' => function($q){
-                    $q->orderBy('order');
-                }, 'positions.candidates.party'])
+        if (! $election) {
+            $election = Election::with(['positions' => function ($q) {
+                $q->orderBy('order');
+            }, 'positions.candidates.party'])
                 ->latest('created_at')
                 ->first();
         }
@@ -38,11 +40,11 @@ class VoteController extends Controller
                 'elections_count' => Election::count(),
                 'active_elections_count' => Election::where('is_active', true)->count(),
                 'user_voted' => $user->has_voted,
-            ]
+            ],
         ]);
     }
 
-    public function submit(Request $request)
+    public function submit(Request $request): RedirectResponse
     {
         $user = auth()->user();
 
@@ -50,8 +52,8 @@ class VoteController extends Controller
         $election = Election::with('positions')
             ->where('is_active', true)
             ->first();
-            
-        if (!$election) {
+
+        if (! $election) {
             return redirect()->route('student.dashboard')->with('error', 'No active election found.');
         }
 
@@ -64,7 +66,7 @@ class VoteController extends Controller
 
         // Validate per-position selection counts and candidate ownership
         foreach ($election->positions as $position) {
-            $selected = collect($selections[$position->id] ?? [])->filter(fn($v) => !empty($v))->values();
+            $selected = collect($selections[$position->id] ?? [])->filter(fn ($v) => ! empty($v))->values();
 
             if ($selected->isEmpty()) {
                 // allow abstain per position by submitting empty selection
@@ -89,7 +91,7 @@ class VoteController extends Controller
         DB::transaction(function () use ($election, $user, $selections) {
             // Store votes per position
             foreach ($election->positions as $position) {
-                $selected = collect($selections[$position->id] ?? [])->filter(fn($v) => !empty($v))->values();
+                $selected = collect($selections[$position->id] ?? [])->filter(fn ($v) => ! empty($v))->values();
                 if ($selected->isEmpty()) {
                     // Record abstain for this position
                     Vote::create([
@@ -100,6 +102,7 @@ class VoteController extends Controller
                         'is_abstain' => true,
                         'voted_at' => now(),
                     ]);
+
                     continue;
                 }
 

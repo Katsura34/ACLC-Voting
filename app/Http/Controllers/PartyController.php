@@ -4,12 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Election;
 use App\Models\Party;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class PartyController extends Controller
 {
-    public function store(Request $request, Election $election)
+    public function store(Request $request, Election $election): RedirectResponse
     {
         $data = $request->validate([
             'name' => 'required|string|max:255',
@@ -25,7 +26,7 @@ class PartyController extends Controller
         return back()->with('success', 'Party added.');
     }
 
-    public function update(Request $request, Election $election, Party $party)
+    public function update(Request $request, Election $election, Party $party): RedirectResponse
     {
         $this->authorizeParty($election, $party);
 
@@ -41,11 +42,12 @@ class PartyController extends Controller
         return back()->with('success', 'Party updated.');
     }
 
-    public function destroy(Election $election, Party $party)
+    public function destroy(Election $election, Party $party): RedirectResponse
     {
         $this->authorizeParty($election, $party);
 
         $party->delete();
+
         return back()->with('success', 'Party deleted.');
     }
 
