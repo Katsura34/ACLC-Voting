@@ -1,6 +1,6 @@
 # ACLC Voting System
 
-A comprehensive online voting management system built with Laravel 12 for managing student elections at ACLC (Asian College of Science and Technology Foundation, Inc.).
+A comprehensive online voting management system built with Laravel 12 for managing student elections at ACLC.
 
 ## 📋 Table of Contents
 
