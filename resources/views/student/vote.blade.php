@@ -24,13 +24,6 @@
   <div class="alert alert-danger">{{ session('error') }}</div>
 @endif
 
-@php
-  $user = auth()->user();
-  $election = \App\Models\Election::with(['positions' => function($q){ $q->orderBy('order'); }, 'positions.candidates.party'])
-      ->where('is_active', true)
-      ->first();
-@endphp
-
 @if($user->has_voted)
   <div class="card border-0 shadow-sm">
     <div class="card-body text-center py-5">

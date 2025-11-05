@@ -4,11 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Election;
 use App\Models\Position;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class PositionController extends Controller
 {
-    public function store(Request $request, Election $election)
+    public function store(Request $request, Election $election): RedirectResponse
     {
         $data = $request->validate([
             'name' => 'required|string|max:255',
@@ -23,7 +24,7 @@ class PositionController extends Controller
         return back()->with('success', 'Position added.');
     }
 
-    public function update(Request $request, Election $election, Position $position)
+    public function update(Request $request, Election $election, Position $position): RedirectResponse
     {
         $this->authorizePosition($election, $position);
 
@@ -38,11 +39,12 @@ class PositionController extends Controller
         return back()->with('success', 'Position updated.');
     }
 
-    public function destroy(Election $election, Position $position)
+    public function destroy(Election $election, Position $position): RedirectResponse
     {
         $this->authorizePosition($election, $position);
 
         $position->delete();
+
         return back()->with('success', 'Position deleted.');
     }
 

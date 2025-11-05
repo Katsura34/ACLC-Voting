@@ -17,23 +17,6 @@
   </div>
 </div>
 
-@php
-  $totalStudents = \App\Models\User::students()->count();
-  $totalElections = \App\Models\Election::count();
-  $totalParties = \App\Models\Party::count();
-  $totalCandidates = \App\Models\Candidate::count();
-
-  $activeElection = \App\Models\Election::with(['positions','candidates'])
-    ->where('is_active', true)
-    ->latest('start_date')
-    ->first();
-  $activeCount = \App\Models\Election::where('is_active', true)->count();
-  $turnoutPct = $activeElection?->voting_percentage ?? 0;
-  $votesCast = $activeElection?->total_votes_cast ?? 0;
-
-  $recentElections = \App\Models\Election::orderByDesc('created_at')->take(5)->get();
-@endphp
-
 <div class="row g-3 mb-4">
   <div class="col-md-3">
     <div class="card border-0 shadow-sm h-100">

@@ -14,11 +14,11 @@ class StudentMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return redirect()->route('login');
         }
 
-        if (!Auth::user()->isStudent()) {
+        if (! Auth::user()->isStudent()) {
             abort(403, 'Access denied. Student access required.');
         }
 
